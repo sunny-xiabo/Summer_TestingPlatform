@@ -44,18 +44,17 @@ class ProjectView(GenericViewSet):
 
     @method_decorator(request_log(level='INFO'))
     def add(self, request):
+        """添加项目 {
+            name: str
+        }
         """
-        添加项目
-        :param {name: str}
-        :param request:
-        :return:
-        """
+
         name = request.data["name"]
 
         if models.Project.objects.filter(name=name).first():
             response.PROJECT_EXISTS["name"] = name
             return Response(response.PROJECT_EXISTS)
-            # 反序列化
+        # 反序列化
         serializer = serializers.ProjectSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -145,12 +144,6 @@ class DashBoardView(GenericViewSet):
 
     @method_decorator(request_log(level='INFO'))
     def get(self, request):
-        """
-
-        :param request:
-        :return:
-        """
-
         _, report_status = prepare.aggregate_reports_by_status(0)
         _, report_type = prepare.aggregate_reports_by_type(0)
         report_day = prepare.aggregate_reports_or_case_bydate('day', models.Report)

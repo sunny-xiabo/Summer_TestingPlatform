@@ -11,7 +11,7 @@ from summertest import models
 from django.db.models import Q
 
 
-class ProjectSerializer(serializers.Serializer):
+class ProjectSerializer(serializers.ModelSerializer):
     """
     项目信息序列化
     """
