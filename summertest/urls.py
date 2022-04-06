@@ -31,6 +31,10 @@ from django.urls import path
 from summertest.views import project
 
 urlpatterns = [
+    # 访问统计相关接口
+    path('visit/', project.VisitView.as_view({
+        "get": "list",
+    })),
 
     # 项目相关接口地址
     path('project/', project.ProjectView.as_view(

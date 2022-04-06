@@ -9,7 +9,7 @@ import json
 
 import pydash
 import requests
-from django.core.cache import cache
+
 from django.db.models import Sum, Count, Q
 from django.db.models.functions import Concat
 from loguru import logger
@@ -23,6 +23,9 @@ from djcelery import models as celery_models
 def get_counter(model, pk=None):
     """
     统计相关表长度
+    :param model:
+    :param pk:
+    :return:
     """
     if pk:
         return model.objects.filter(project__id=pk).count()
@@ -44,7 +47,7 @@ def report_status_count(pk):
 
 def get_recent_date(date_type):
     """
-
+    获取最近的日期
     :param date_type:
     :return:
     """
@@ -72,7 +75,7 @@ def list2dict(arr):
 
 def complete_list(arr, date_type):
     """
-
+    完成的列表
     :param arr:
     :param date_type:
     :return:
@@ -86,7 +89,7 @@ def complete_list(arr, date_type):
 
 def get_sql_dateformat(date_type):
     """
-
+    通过SQL对日期格式化
     :param date_type:
     :return:
     """
@@ -111,7 +114,8 @@ def get_project_api_cover(project_id):
 
 
 def get_project_apis(project_id) -> dict:
-    """统计项目中手动创建和从yapi导入的接口数量
+    """
+    统计项目中手动创建和从yapi导入的接口数量
     """
     query = models.API.objects.filter(delete=0).filter(~Q(tag=4))
     if project_id:
@@ -123,7 +127,8 @@ def get_project_apis(project_id) -> dict:
 
 
 def aggregate_apis_bydate(date_type, is_yapi=False) -> dict:
-    """按照日，周，月统计项目中手动创建和从yapi导入的接口数量
+    """
+    按照日，周，月统计项目中手动创建和从yapi导入的接口数量
     """
     create_time = get_sql_dateformat(date_type)
 

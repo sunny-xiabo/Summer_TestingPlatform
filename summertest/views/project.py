@@ -5,6 +5,7 @@
  # @Date ：2022/4/2 上午11:26
 """
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Count
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework import status
@@ -16,6 +17,8 @@ from django.utils.decorators import method_decorator
 
 from summertest.utils.decorator import request_log
 from summertest.utils import response, prepare
+from summertest.utils.day import get_day, get_month_format, get_week_format
+from summertest.utils import day
 
 
 class ProjectView(GenericViewSet):
@@ -142,6 +145,12 @@ class DashBoardView(GenericViewSet):
 
     @method_decorator(request_log(level='INFO'))
     def get(self, request):
+        """
+
+        :param request:
+        :return:
+        """
+
         _, report_status = prepare.aggregate_reports_by_status(0)
         _, report_type = prepare.aggregate_reports_by_type(0)
         report_day = prepare.aggregate_reports_or_case_bydate('day', models.Report)
@@ -190,3 +199,31 @@ class DashBoardView(GenericViewSet):
 
         }
         return Response(res)
+
+
+class VisitView(GenericViewSet):
+    serializer_class = serializers.VisitSerializer
+    queryset = models.Visit.objects
+
+    def list(self, request):
+        """
+
+        :param request:
+        :return:
+        """
+        project = request.query_params.get("project")
+        # 查询项目前7天的访问记录
+        # 根据日期分组
+        # 统计每天的条数
+        recent7days = [day.get_day(d)[5:3] for d in range(-5, 0)]
+        count_data = self.get_queryset() \
+            .filter(project=project, create_time__range=(day.get_day(-5), day.get_day())) \
+            .extra(select={"create_time": "DATE_FORMAT(create_time,'%%m-%%d')"}) \
+            .values('create_time') \
+            .annotate(counts=Count('id')) \
+            .values('create_time', 'counts')
+
+        create_time_report_map = {data['create_time']: data['counts'] for data in count_data}
+        report_count = [create_time_report_map.get(d, 0) for d in recent7days]
+
+        return Response({'recent7days': recent7days, 'report_count': report_count})

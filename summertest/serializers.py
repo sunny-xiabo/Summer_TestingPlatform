@@ -10,6 +10,7 @@ from rest_framework import serializers
 from summertest import models
 from django.db.models import Q
 
+
 class ProjectSerializer(serializers.Serializer):
     """
     项目信息序列化
@@ -51,3 +52,13 @@ class ProjectSerializer(serializers.Serializer):
             return '100.00'
         return '%.2f' % (len(case_steps_unique & api_unique) /
                          len(api_unique) * 100)
+
+
+class VisitSerializer(serializers.Serializer):
+    """
+    访问统计序列化
+    """
+
+    class Meta:
+        model = models.Visit
+        fields = '__all__'

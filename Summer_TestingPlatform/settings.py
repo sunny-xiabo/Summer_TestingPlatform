@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import datetime
-from pathlib import Path
 import os
+import djcelery
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,7 +32,6 @@ INVALID_TIME = 60 * 60 * 24 * 3650
 
 ALLOWED_HOSTS = ['*']
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -43,23 +42,25 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'summertest.apps.SummertestConfig',
     'summertestuser',
     'rest_framework',
     'drf_yasg',
-    'summertest',
     'djcelery',
     'corsheaders',
+    'rest_framework_swagger',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.gzip.GZipMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'summertest.utils.middleware.VisitTimesMiddleware',
 ]
 
 ROOT_URLCONF = 'Summer_TestingPlatform.urls'
@@ -83,7 +84,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Summer_TestingPlatform.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
@@ -104,7 +104,6 @@ DATABASES = {
     }
 }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
@@ -123,7 +122,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
@@ -136,7 +134,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = False
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
@@ -153,7 +150,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'summertestuser.MyUser'
 
-
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'Summer_TestingPlatform.auth.MyJWTAuthentication',
@@ -166,7 +162,7 @@ REST_FRAMEWORK = {
                                'rest_framework.parsers.MultiPartParser',
                                'rest_framework.parsers.FileUploadParser',
                                ],
-
+    'DEFAULT_PAGINATION_CLASS': 'Summer_TestingPlatform.pagination.MyPageNumberPagination',
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
 }
 
@@ -175,7 +171,6 @@ JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=365),
     'JWT_ALLOW_REFRESH': True,
 }
-
 
 SWAGGER_SETTINGS = {
     'DEFAULT_AUTO_SCHEMA_CLASS': 'Summer_TestingPlatform.swagger.CustomSwaggerAutoSchema',
@@ -228,77 +223,75 @@ CORS_ALLOW_HEADERS = (
     'Project'
 )
 
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': True,
-#     'formatters': {
-#         'standard': {
-#             'format': '%(asctime)s [%(levelname)s] - %(message)s',
-#             'datefmt': '%Y-%m-%d %H:%M:%S'
-#         }
-#         # 日志格式
-#     },
-#     'filters': {
-#     },
-#     'handlers': {
-#         'mail_admins': {
-#             'level': 'ERROR',
-#             'class': 'django.utils.log.AdminEmailHandler',
-#             'include_html': True,
-#         },
-#         'default': {
-#             'level': 'DEBUG',
-#             'class': 'logging.handlers.RotatingFileHandler',
-#             'filename': os.path.join(BASE_DIR, 'logs/debug.log'),
-#             'maxBytes': 1024 * 1024 * 50,
-#             'backupCount': 5,
-#             'formatter': 'standard',
-#         },
-#         'console': {
-#             'level': 'DEBUG',
-#             'class': 'logging.StreamHandler',
-#             'formatter': 'standard'
-#         },
-#         'request_handler': {
-#             'level': 'INFO',
-#             'class': 'logging.handlers.RotatingFileHandler',
-#             'filename': os.path.join(BASE_DIR, 'logs/run.log'),
-#             'maxBytes': 1024 * 1024 * 50,
-#             'backupCount': 5,
-#             'formatter': 'standard',
-#         },
-#         'scprits_handler': {
-#             'level': 'INFO',
-#             'class': 'logging.handlers.RotatingFileHandler',
-#             # 'filename': os.path.join(BASE_DIR, 'logs/../../logs/run.log'),
-#             'filename': os.path.join(BASE_DIR, 'logs/run.log'),
-#             'maxBytes': 1024 * 1024 * 100,
-#             'backupCount': 5,
-#             'formatter': 'standard',
-#         },
-#     },
-#     'loggers': {
-#         'django': {
-#             'handlers': ['default', 'console'],
-#             'level': 'INFO',
-#             'propagate': True
-#         },
-#         'Summer_TestingPlatform.app': {
-#             'handlers': ['default', 'console'],
-#             'level': 'INFO',
-#             'propagate': True
-#         },
-#         'django.request': {
-#             'handlers': ['request_handler'],
-#             'level': 'INFO',
-#             'propagate': True
-#         },
-#         'Summer_TestingPlatform': {
-#             'handlers': ['scprits_handler', 'console'],
-#             'level': 'INFO',
-#             'propagate': True
-#         }
-#     }
-# }
-
-
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s [%(levelname)s] - %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        }
+        # 日志格式
+    },
+    'filters': {
+    },
+    'handlers': {
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler',
+            'include_html': True,
+        },
+        'default': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/debug.log'),
+            'maxBytes': 1024 * 1024 * 50,
+            'backupCount': 5,
+            'formatter': 'standard',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard'
+        },
+        'request_handler': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/run.log'),
+            'maxBytes': 1024 * 1024 * 50,
+            'backupCount': 5,
+            'formatter': 'standard',
+        },
+        'scprits_handler': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            # 'filename': os.path.join(BASE_DIR, 'logs/../../logs/run.log'),
+            'filename': os.path.join(BASE_DIR, 'logs/run.log'),
+            'maxBytes': 1024 * 1024 * 100,
+            'backupCount': 5,
+            'formatter': 'standard',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['default', 'console'],
+            'level': 'INFO',
+            'propagate': True
+        },
+        'Summer_TestingPlatform.app': {
+            'handlers': ['default', 'console'],
+            'level': 'INFO',
+            'propagate': True
+        },
+        'django.request': {
+            'handlers': ['request_handler'],
+            'level': 'INFO',
+            'propagate': True
+        },
+        'Summer_TestingPlatform': {
+            'handlers': ['scprits_handler', 'console'],
+            'level': 'INFO',
+            'propagate': True
+        }
+    }
+}
