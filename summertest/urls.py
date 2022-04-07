@@ -50,4 +50,11 @@ urlpatterns = [
     path('project/yapi/<int:pk>/', project.ProjectView.as_view({"get": "yapi_info"})),
 
     path('dashboard/', project.DashBoardView.as_view({'get': 'get'})),
+
+    # debugtalk.py 相关接口
+    path('debugtalk/<int:pk>/', project.DebugTalkView.as_view({"get": "debugtalk"})),
+    path('debugtalk/', project.DebugTalkView.as_view({
+        "patch": "update",
+        "post": "run"
+    })),
 ]

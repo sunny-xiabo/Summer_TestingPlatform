@@ -9,6 +9,7 @@ from drf_yasg.utils import swagger_auto_schema
 from summertestuser.common import response
 from summertestuser import serializers, models
 
+
 # Create your views here.
 
 
@@ -21,7 +22,13 @@ User = get_user_model()
 class RegisterView(APIView):
     authentication_classes = ()
     permission_classes = ()
-
+    """
+       注册:{
+           "user": "demo"
+           "password": "1321"
+           "email": "1@1.com"
+       }
+    """
     def post(self, request):
 
         try:

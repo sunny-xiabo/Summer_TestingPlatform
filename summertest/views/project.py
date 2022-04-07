@@ -19,6 +19,7 @@ from summertest.utils.decorator import request_log
 from summertest.utils import response, prepare
 from summertest.utils.day import get_day, get_month_format, get_week_format
 from summertest.utils import day
+from summertest.utils.runner import DebugCode
 
 
 class ProjectView(GenericViewSet):
@@ -220,3 +221,66 @@ class VisitView(GenericViewSet):
         report_count = [create_time_report_map.get(d, 0) for d in recent7days]
 
         return Response({'recent7days': recent7days, 'report_count': report_count})
+
+
+class DebugTalkView(GenericViewSet):
+    """
+    debugtalk update
+    """
+
+    serializer_class = serializers.DebugTalkSerializer
+
+    @method_decorator(request_log(level='INFO'))
+    def debugtalk(self, request, **kwargs):
+        """
+        得到debugtalk code
+        :param request:
+        :param kwargs:
+        :return:
+        """
+        pk = kwargs.pop('pk')
+        try:
+            queryset = models.Debugtalk.objects.get(project__id=pk)
+        except ObjectDoesNotExist:
+            return Response(response.DEBUGTALK_NOT_EXISTS)
+
+        serializer = self.get_serializer(queryset, many=False)
+
+        return Response(serializer.data)
+
+    @method_decorator(request_log(level='INFO'))
+    def update(self, request):
+        """
+        编辑debugtalk.py 代码并保存
+        :param request:
+        :return:
+        """
+        pk = request.data['id']
+        try:
+            models.Debugtalk.objects.filter(id=pk)\
+                .update(code=request.data['code'], updater=request.user.username)
+        except ObjectDoesNotExist:
+            return Response(response.SYSTEM_ERROR)
+
+        return Response(response.DEBUGTALK_UPDATE_SUCCESS)
+
+    @method_decorator(request_log(level='INFO'))
+    def run(self, request):
+        """
+        运行debugtalk
+        :param request:
+        :return:
+        """
+        try:
+            code = request.data['code']
+        except KeyError:
+            return Response(response.KEY_MISS)
+
+        debug = DebugCode(code)
+        debug.run()
+        resp = {
+            "msg": debug.resp,
+            "success": True,
+            "code": "0001"
+        }
+        return Response(resp)

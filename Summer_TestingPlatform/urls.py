@@ -18,14 +18,11 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from django.conf.urls import url
 
-
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
 from rest_framework import permissions
 from rest_framework_jwt.views import obtain_jwt_token
-
-
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -47,7 +44,6 @@ urlpatterns = [
     path(r"login", obtain_jwt_token),
     path('admin/', admin.site.urls),
     url(r'^docs/', schema_view, name="docs"),
-
     url(r'^accounts/', include('rest_framework.urls',)),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework_api_auth')),
     path('api/user/', include('summertestuser.urls')),

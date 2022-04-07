@@ -148,7 +148,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'summertestuser.MyUser'
+
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -171,6 +171,8 @@ JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=365),
     'JWT_ALLOW_REFRESH': True,
 }
+
+AUTH_USER_MODEL = 'summertestuser.MyUser'
 
 SWAGGER_SETTINGS = {
     'DEFAULT_AUTO_SCHEMA_CLASS': 'Summer_TestingPlatform.swagger.CustomSwaggerAutoSchema',

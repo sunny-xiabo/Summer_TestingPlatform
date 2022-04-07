@@ -54,11 +54,21 @@ class ProjectSerializer(serializers.ModelSerializer):
                          len(api_unique) * 100)
 
 
-class VisitSerializer(serializers.Serializer):
+class VisitSerializer(serializers.ModelSerializer):
     """
     访问统计序列化
     """
 
     class Meta:
         model = models.Visit
+        fields = '__all__'
+
+
+class DebugTalkSerializer(serializers.ModelSerializer):
+    """
+    驱动代码序列化
+    """
+
+    class Meta:
+        model = models.Debugtalk
         fields = '__all__'
