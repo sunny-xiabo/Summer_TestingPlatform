@@ -6,6 +6,7 @@
 """
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count
+from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework import status
@@ -20,6 +21,7 @@ from summertest.utils import response, prepare
 from summertest.utils.day import get_day, get_month_format, get_week_format
 from summertest.utils import day
 from summertest.utils.runner import DebugCode
+from summertest.utils.tree import get_tree_max_id
 
 
 class ProjectView(GenericViewSet):
@@ -257,7 +259,7 @@ class DebugTalkView(GenericViewSet):
         """
         pk = request.data['id']
         try:
-            models.Debugtalk.objects.filter(id=pk)\
+            models.Debugtalk.objects.filter(id=pk) \
                 .update(code=request.data['code'], updater=request.user.username)
         except ObjectDoesNotExist:
             return Response(response.SYSTEM_ERROR)
@@ -284,3 +286,66 @@ class DebugTalkView(GenericViewSet):
             "code": "0001"
         }
         return Response(resp)
+
+
+class TreeView(APIView):
+    """
+    树形结构操作
+    """
+
+    @method_decorator(request_log(level='INFO'))
+    def get(self, request, **kwargs):
+        """
+        返回树形结构
+        当前节点ID
+        :param request:
+        :param kwargs:
+        :return:
+        """
+        try:
+            tree_type = request.query_params['type']
+            tree = models.Relation.objects.get(project__id=kwargs['pk'], type=tree_type)
+        except KeyError:
+            return Response(response.KEY_MISS)
+        except ObjectDoesNotExist:
+            return Response(response.SYSTEM_ERROR)
+
+        body = eval(tree.tree)  # list
+        tree = {
+            "tree": body,
+            "id": tree.id,
+            "success": True,
+            "max": get_tree_max_id(body)
+        }
+        return Response(tree)
+
+    @method_decorator(request_log(level='INFO'))
+    def patch(self, request, **kwargs):
+        """
+        修改树形结构，ID不能重复
+        :param request:
+        :param kwargs:
+        :return:
+        """
+        try:
+            body = request.data['body']
+            mode = request.data['mode']
+
+            relation = models.Relation.objects.get(id=kwargs['pk'])
+            relation.tree = body
+            relation.save()
+
+        except KeyError:
+            return Response(response.KEY_MISS)
+
+        except ObjectDoesNotExist:
+            return Response(response.SYSTEM_ERROR)
+
+        #  mode -> True remove node
+        if mode:
+            prepare.tree_end(request.data, relation.project)
+
+        response.TREE_UPDATE_SUCCESS['tree'] = body
+        response.TREE_UPDATE_SUCCESS['max'] = get_tree_max_id(body)
+
+        return Response(response.TREE_UPDATE_SUCCESS)

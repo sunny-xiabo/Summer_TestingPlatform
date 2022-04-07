@@ -57,4 +57,7 @@ urlpatterns = [
         "patch": "update",
         "post": "run"
     })),
+
+    # 二叉树接口地址
+    path('tree/<int:pk>/', project.TreeView.as_view()),
 ]

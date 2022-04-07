@@ -72,3 +72,13 @@ class DebugTalkSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Debugtalk
         fields = '__all__'
+
+
+class RelationSerializer(serializers.ModelSerializer):
+    """
+    树形结构序列化
+    """
+
+    class Meta:
+        model = models.Relation
+        fields = '__all__'
