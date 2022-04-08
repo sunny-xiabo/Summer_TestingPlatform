@@ -9,6 +9,8 @@ from rest_framework import serializers
 
 from summertest import models
 from django.db.models import Q
+from summertest.utils.parser import Parse
+from summertest.utils.tree import get_tree_relation_name
 
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -82,3 +84,76 @@ class RelationSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Relation
         fields = '__all__'
+
+class AssertSerializer(serializers.Serializer):
+    """
+    断言序列化
+    """
+    class Meta:
+        models = models.API
+
+    node = serializers.IntegerField(min_value=0, default='')
+    # max_value=models.Project.objects.latest('id').id 会导致数据库迁移找不到project
+    project = serializers.IntegerField(required=True, min_value=1)
+    search = serializers.CharField(default='')
+    creator = serializers.CharField(required=False, default='')
+    tag = serializers.ChoiceField(choices=models.API.TAG, default='')
+    rigEnv = serializers.ChoiceField(choices=models.API.ENV_TYPE, default='')
+    delete = serializers.ChoiceField(choices=(0, 1), default=0)
+    onlyMe = serializers.BooleanField(default=False)
+    showYAPI = serializers.BooleanField(default=True)
+
+
+class APIRelatedCaseSerializer(serializers.Serializer):
+    case_name = serializers.CharField(source='case.name')
+    case_id = serializers.CharField(source='case.id')
+
+    class Meta:
+        fields = ['case_id', 'case_name']
+
+
+class APISerializer(serializers.ModelSerializer):
+    """
+    接口信息序列化
+    """
+    body = serializers.SerializerMethodField()
+    tag_name = serializers.CharField(source="get_tag_display")
+    cases = serializers.SerializerMethodField()
+    relation_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.API
+        # fields = '__all__'
+        fields = [
+            'id',
+            'name',
+            'url',
+            'method',
+            'project',
+            'relation',
+            'body',
+            'rig_env',
+            'tag',
+            'tag_name',
+            'update_time',
+            'delete',
+            'creator',
+            'updater',
+            'cases',
+            'relation_name']
+
+    def get_body(self, obj):
+        parse = Parse(eval(obj.body))
+        parse.parse_http()
+        return parse.testcase
+
+    def get_cases(self, obj):
+        cases = models.CaseStep.objects.filter(source_api_id=obj.id)
+        case_id = APIRelatedCaseSerializer(many=True, instance=cases)
+        return case_id.data
+
+    def get_relation_name(self, obj):
+        relation_obj = models.Relation.objects.get(
+            project_id=obj.project_id, type=1)
+        label = get_tree_relation_name(eval(relation_obj.tree), obj.relation)
+        return label

@@ -28,7 +28,7 @@ Including another URLconf
 """
 
 from django.urls import path
-from summertest.views import project
+from summertest.views import project, api
 
 urlpatterns = [
     # 访问统计相关接口
@@ -60,4 +60,25 @@ urlpatterns = [
 
     # 二叉树接口地址
     path('tree/<int:pk>/', project.TreeView.as_view()),
+
+    # api接口模板地址
+    path('api/', api.APITemplateView.as_view({
+        "post": "add",
+        "get": "list"
+    })),
+
+    path('api/<int:pk>/', api.APITemplateView.as_view({
+        "delete": "delete",
+        "get": "single",
+        "patch": "update",
+        "post": "copy"
+    })),
+
+    path('api/tag/', api.APITemplateView.as_view({
+        "patch": "add_tag",  # api修改状态
+    })),
+
+    path('api/move_api/', api.APITemplateView.as_view({
+        "patch": "move",  # api修改relation
+    })),
 ]

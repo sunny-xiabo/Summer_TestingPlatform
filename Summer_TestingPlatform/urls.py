@@ -34,8 +34,9 @@ schema_view = get_schema_view(
         license=openapi.License(name="BSD License"),
     ),
     public=True,
+    authentication_classes=(),
     permission_classes=(permissions.AllowAny,),
-    authentication_classes=[],
+
 )
 
 
@@ -48,7 +49,6 @@ urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework_api_auth')),
     path('api/user/', include('summertestuser.urls')),
     path('api/summertest/', include('summertest.urls')),
-
 
 
     # swagger

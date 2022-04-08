@@ -35,6 +35,7 @@ def format_json(value):
     except BaseException:
         return value
 
+
 class Format(object):
     """
     解析标准HttpRunner脚本 前端->后端
@@ -179,4 +180,252 @@ class Format(object):
         if self.__teardown_hooks:
             test['teardown_hooks'] = self.__teardown_hooks
 
+        self.testcase = test
+
+
+class Parse(object):
+    """
+    标准HttpRunner脚本解析至前端 后端->前端
+    """
+
+    def __init__(self, body, level='test'):
+        """
+        body: => {
+                "name": "get token with $user_agent, $os_platform, $app_version",
+                "request": {
+                    "url": "/api/get-token",
+                    "method": "POST",
+                    "headers": {
+                        "app_version": "$app_version",
+                        "os_platform": "$os_platform",
+                        "user_agent": "$user_agent"
+                    },
+                    "json": {
+                        "sign": "${get_sign($user_agent, $device_sn, $os_platform, $app_version)}"
+                    },
+                    "extract": [
+                        {"token": "content.token"}
+                    ],
+                    "validate": [
+                        {"eq": ["status_code", 200]},
+                        {"eq": ["headers.Content-Type", "application/json"]},
+                        {"eq": ["content.success", true]}
+                    ],
+                    "setup_hooks": [],
+                    "teardown_hooks": []
+                }
+        """
+        self.name = body.get('name')
+        self.__request = body.get('request')  # header files params json data
+        self.__variables = body.get('variables')
+        self.__setup_hooks = body.get('setup_hooks', [])
+        self.__teardown_hooks = body.get('teardown_hooks', [])
+        self.__desc = body.get('desc')
+
+        if level == 'test':
+            self.__times = body.get('times', 1)  # 如果导入没有times 默认为1
+            self.__extract = body.get('extract')
+            self.__validate = body.get('validate')
+
+        elif level == "config":
+            self.__parameters = body.get("parameters")
+
+        self.__level = level
+        self.testcase = None
+
+    @staticmethod
+    def __get_type(content):
+        """
+        返回data_type 默认string
+        """
+        var_type = {
+            "str": 1,
+            "int": 2,
+            "float": 3,
+            "bool": 4,
+            "list": 5,
+            "dict": 6,
+            "NoneType": 7
+        }
+
+        key = str(type(content).__name__)
+
+        # 黑魔法，为了兼容值是int，但又是$引用变量的情况
+        if key == 'str' and '$int' in content:
+            return var_type['int'], content
+
+        if key == "NoneType":
+            return var_type['NoneType'], content
+
+        if key in ["list", "dict"]:
+            content = json.dumps(content, ensure_ascii=False)
+        else:
+            content = str(content)
+        return var_type[key], content
+
+    def parse_http(self):
+        """
+        标准前端脚本格式
+        """
+        init = [{
+            "key": "",
+            "value": "",
+            "desc": ""
+        }]
+
+        init_p = [{
+            "key": "",
+            "value": "",
+            "desc": "",
+            "type": 1
+        }]
+
+        #  初始化test结构
+        test = {
+            "name": self.name,
+            "header": init,
+            "request": {
+                "data": init_p,
+                "params": init_p,
+                "json_data": ''
+            },
+            "variables": init_p,
+            "hooks": [{
+                "setup": "",
+                "teardown": ""
+            }]
+        }
+
+        if self.__level == 'test':
+            test["times"] = self.__times
+            test["method"] = self.__request['method']
+            test["url"] = self.__request['url']
+            test["validate"] = [{
+                "expect": "",
+                "actual": "",
+                "comparator": "equals",
+                "type": 1
+            }]
+            test["extract"] = init
+
+            if self.__extract:
+                test["extract"] = []
+                for content in self.__extract:
+                    for key, value in content.items():
+                        test['extract'].append({
+                            "key": key,
+                            "value": value,
+                            "desc": self.__desc["extract"][key]
+                        })
+
+            if self.__validate:
+                test["validate"] = []
+                for content in self.__validate:
+                    for key, value in content.items():
+                        obj = Parse.__get_type(value[1])
+                        # 兼容旧的断言
+                        desc = ''
+                        if len(value) >= 3:
+                            # value[2]为None时，设置为''
+                            desc = value[2] or ''
+                        test["validate"].append({
+                            "expect": obj[1],
+                            "actual": value[0],
+                            "comparator": key,
+                            "type": obj[0],
+                            "desc": desc
+                        })
+
+        elif self.__level == "config":
+            test["base_url"] = self.__request["base_url"]
+            test["parameters"] = init
+
+            if self.__parameters:
+                test["parameters"] = []
+                for content in self.__parameters:
+                    for key, value in content.items():
+                        test["parameters"].append({
+                            "key": key,
+                            "value": Parse.__get_type(value)[1],
+                            "desc": self.__desc["parameters"][key]
+                        })
+
+        if self.__request.get('headers'):
+            test["header"] = []
+            for key, value in self.__request.pop('headers').items():
+                test['header'].append({
+                    "key": key,
+                    "value": value,
+                    "desc": self.__desc["header"][key]
+                })
+
+        if self.__request.get('data'):
+            test["request"]["data"] = []
+            for key, value in self.__request.pop('data').items():
+                obj = Parse.__get_type(value)
+
+                test['request']['data'].append({
+                    "key": key,
+                    "value": obj[1],
+                    "type": obj[0],
+                    "desc": self.__desc["data"][key]
+                })
+
+        # if self.__request.get('files'):
+        #     for key, value in self.__request.pop("files").items():
+        #         size = FileBinary.objects.get(name=value).size
+        #         test['request']['data'].append({
+        #             "key": key,
+        #             "value": value,
+        #             "size": size,
+        #             "type": 5,
+        #             "desc": self.__desc["files"][key]
+        #         })
+
+        if self.__request.get('params'):
+            test["request"]["params"] = []
+            for key, value in self.__request.pop('params').items():
+                test['request']['params'].append({
+                    "key": key,
+                    "value": value,
+                    "type": 1,
+                    "desc": self.__desc["params"][key]
+                })
+
+        if self.__request.get('json'):
+            test["request"]["json_data"] = \
+                json.dumps(self.__request.pop("json"), indent=4,
+                           separators=(',', ': '), ensure_ascii=False)
+        if self.__variables:
+            test["variables"] = []
+            for content in self.__variables:
+                for key, value in content.items():
+                    obj = Parse.__get_type(value)
+                    test["variables"].append({
+                        "key": key,
+                        "value": obj[1],
+                        "desc": self.__desc["variables"][key],
+                        "type": obj[0]
+                    })
+
+        if self.__setup_hooks or self.__teardown_hooks:
+            test["hooks"] = []
+            if len(self.__setup_hooks) > len(self.__teardown_hooks):
+                for index in range(0, len(self.__setup_hooks)):
+                    teardown = ""
+                    if index < len(self.__teardown_hooks):
+                        teardown = self.__teardown_hooks[index]
+                    test["hooks"].append({
+                        "setup": self.__setup_hooks[index],
+                        "teardown": teardown
+                    })
+            else:
+                for index in range(0, len(self.__teardown_hooks)):
+                    setup = ""
+                    if index < len(self.__setup_hooks):
+                        setup = self.__setup_hooks[index]
+                    test["hooks"].append({
+                        "setup": setup,
+                        "teardown": self.__teardown_hooks[index]
+                    })
         self.testcase = test

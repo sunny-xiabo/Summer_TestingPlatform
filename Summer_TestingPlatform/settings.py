@@ -148,11 +148,11 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-
 REST_FRAMEWORK = {
+    # 'DEFAULT_AUTHENTICATION_CLASSES': ['Summer_TestingPlatform.auth.DeleteAuthenticator', 'Summer_TestingPlatform.auth.Authenticator', ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'Summer_TestingPlatform.auth.MyJWTAuthentication',
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
     ],
     'UNAUTHENTICATED_USER': None,
     'UNAUTHENTICATED_TOKEN': None,
@@ -168,8 +168,11 @@ REST_FRAMEWORK = {
 
 JWT_AUTH = {
     # 'JWT_SECRET_KEY': SECRET_KEY,
+    # 设置过期时间
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=365),
     'JWT_ALLOW_REFRESH': True,
+    # 设置请求头名
+    'JWT_AUTH_HEADER_PREFIX': 'JWT',
 }
 
 AUTH_USER_MODEL = 'summertestuser.MyUser'
@@ -186,7 +189,7 @@ SWAGGER_SETTINGS = {
     # 'LOGIN_URL': 'rest_framework:login',
     # 'LOGOUT_URL': 'rest_framework:logout',
     # 'DOC_EXPANSION': None,
-    # 'SHOW_REQUEST_HEADERS':True,
+    # 'SHOW_REQUEST_HEADERS': True,
     # 'USE_SESSION_AUTH': True,
     # 'DOC_EXPANSION': 'list',
     # 接口文档中方法列表以首字母升序排列
