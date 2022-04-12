@@ -10,12 +10,11 @@ from summertestuser.common import response
 from summertestuser import serializers, models
 
 
-# Create your views here.
+
+
 
 
 # 获取用户模型
-
-
 User = get_user_model()
 
 

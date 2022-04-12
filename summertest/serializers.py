@@ -4,6 +4,7 @@
  # @File : serializers.py
  # @Date ：2022/4/4 下午7:28
 """
+import json
 
 from rest_framework import serializers
 
@@ -85,10 +86,12 @@ class RelationSerializer(serializers.ModelSerializer):
         model = models.Relation
         fields = '__all__'
 
+
 class AssertSerializer(serializers.Serializer):
     """
     断言序列化
     """
+
     class Meta:
         models = models.API
 
@@ -157,3 +160,93 @@ class APISerializer(serializers.ModelSerializer):
             project_id=obj.project_id, type=1)
         label = get_tree_relation_name(eval(relation_obj.tree), obj.relation)
         return label
+
+
+class ReportSerializer(serializers.ModelSerializer):
+    """
+    报告信息序列化
+    """
+    type = serializers.CharField(source="get_type_display")
+    time = serializers.SerializerMethodField()
+    stat = serializers.SerializerMethodField()
+    platform = serializers.SerializerMethodField()
+    success = serializers.SerializerMethodField()
+    ci_job_url = serializers.CharField()
+
+    class Meta:
+        model = models.Report
+        fields = [
+            "id",
+            "name",
+            "type",
+            "time",
+            "stat",
+            "platform",
+            "success",
+            'creator',
+            'updater',
+            'ci_job_url'
+        ]
+
+    def get_time(self, obj):
+        return json.loads(obj.summary)["time"]
+
+    def get_stat(self, obj):
+        return json.loads(obj.summary)["stat"]
+
+    def get_platform(self, obj):
+        return json.loads(obj.summary)["platform"]
+
+    def get_success(self, obj):
+        return json.loads(obj.summary)["success"]
+
+
+class ConfigSerializer(serializers.ModelSerializer):
+    """
+    配置信息序列化
+    """
+    body = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Config
+        fields = [
+            'id',
+            'base_url',
+            'body',
+            'name',
+            'update_time',
+            'is_default',
+            'creator',
+            'updater']
+        depth = 1
+
+    def get_body(self, obj):
+        parse = Parse(eval(obj.body), level='config')
+        parse.parse_http()
+        return parse.testcase
+
+
+class HostIPSerializer(serializers.ModelSerializer):
+    """
+        变量信息序列化
+        """
+
+    class Meta:
+        model = models.HostIP
+        fields = '__all__'
+
+
+class VariablesSerializer(serializers.ModelSerializer):
+    """
+    变量信息序列化
+    """
+    key = serializers.CharField(
+        allow_null=False,
+        max_length=100,
+        required=True)
+    value = serializers.CharField(allow_null=False, max_length=1024)
+    description = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        model = models.Variables
+        fields = '__all__'

@@ -28,7 +28,7 @@ Including another URLconf
 """
 
 from django.urls import path
-from summertest.views import project, api
+from summertest.views import project, api, config, report, yapi
 
 urlpatterns = [
     # 访问统计相关接口
@@ -61,6 +61,9 @@ urlpatterns = [
     # 二叉树接口地址
     path('tree/<int:pk>/', project.TreeView.as_view()),
 
+    # 导入yapi
+    path('yapi/<int:pk>/', yapi.YAPIView.as_view()),
+
     # api接口模板地址
     path('api/', api.APITemplateView.as_view({
         "post": "add",
@@ -81,4 +84,52 @@ urlpatterns = [
     path('api/move_api/', api.APITemplateView.as_view({
         "patch": "move",  # api修改relation
     })),
+
+    # 报告地址
+    path('reports/', report.ReportView.as_view({
+        "get": "list"
+    })),
+
+    path('reports/<int:pk>/', report.ReportView.as_view({
+        "delete": "delete",
+        "get": "look"
+    })),
+
+    # HOST IP 地址
+    path('host_ip/', config.HostIPView.as_view({
+        "post": "add",
+        "get": "list"
+    })),
+
+    path('host_ip/<int:pk>/', config.HostIPView.as_view({
+        "delete": "delete",
+        "patch": "update",
+        "get": "all"
+    })),
+
+    # config接口地址
+    path('config/', config.ConfigView.as_view({
+        "post": "add",
+        "get": "list",
+        "delete": "delete"
+    })),
+
+    path('config/<int:pk>/', config.ConfigView.as_view({
+        "post": "copy",
+        "delete": "delete",
+        "patch": "update",
+        "get": "all"
+    })),
+
+    path('variables/', config.VariablesView.as_view({
+        "post": "add",
+        "get": "list",
+        "delete": "delete"
+    })),
+
+    path('variables/<int:pk>/', config.VariablesView.as_view({
+        "delete": "delete",
+        "patch": "update"
+    })),
+
 ]

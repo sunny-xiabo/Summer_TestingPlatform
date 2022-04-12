@@ -149,11 +149,11 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
-    # 'DEFAULT_AUTHENTICATION_CLASSES': ['Summer_TestingPlatform.auth.DeleteAuthenticator', 'Summer_TestingPlatform.auth.Authenticator', ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'Summer_TestingPlatform.auth.MyJWTAuthentication',
-        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
-    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': ['Summer_TestingPlatform.auth.DeleteAuthenticator',
+                                       'Summer_TestingPlatform.auth.Authenticator', ],
+    # 'DEFAULT_AUTHENTICATION_CLASSES': [
+    #     'Summer_TestingPlatform.auth.MyJWTAuthentication',
+    # ],
     'UNAUTHENTICATED_USER': None,
     'UNAUTHENTICATED_TOKEN': None,
     # json form 渲染
@@ -169,10 +169,10 @@ REST_FRAMEWORK = {
 JWT_AUTH = {
     # 'JWT_SECRET_KEY': SECRET_KEY,
     # 设置过期时间
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=365),
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=7),
     'JWT_ALLOW_REFRESH': True,
     # 设置请求头名
-    'JWT_AUTH_HEADER_PREFIX': 'JWT',
+    # 'JWT_AUTH_HEADER_PREFIX': 'JWT',
 }
 
 AUTH_USER_MODEL = 'summertestuser.MyUser'
